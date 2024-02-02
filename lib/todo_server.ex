@@ -45,14 +45,19 @@ end
 
 defmodule TodoServer do
   ### Client functions ###
-  def start, do: spawn(fn -> loop(TodoList.new()) end)
+  def start do
+    spawn(fn ->
+      Process.register(self(), :todo_server)
+      loop(TodoList.new())
+    end)
+  end
 
-  def add_entry(server_pid, entry), do: send(server_pid, {:new_entry, entry})
+  def add_entry(entry), do: send(:todo_server, {:new_entry, entry})
 
-  def delete_entry(server_pid, entry_id), do: send(server_pid, {:delete_entry, entry_id})
+  def delete_entry(entry_id), do: send(:todo_server, {:delete_entry, entry_id})
 
-  def entries(server_pid, date) do
-    send(server_pid, {:entries, self(), date})
+  def entries(date) do
+    send(:todo_server, {:entries, self(), date})
 
     receive do
       {:response, entries} -> entries
