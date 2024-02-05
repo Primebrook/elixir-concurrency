@@ -38,6 +38,7 @@ defmodule ServerProcess do
 
         {:state, caller_pid} ->
           send(caller_pid, {:response, current_state})
+          current_state
       end
 
     loop(callback_module, new_state)
