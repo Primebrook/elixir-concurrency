@@ -11,5 +11,5 @@ defmodule MockCallbackModule do
   """
   def init, do: "initial state"
 
-  def handle_message(message, current_state), do: {"Message Consumed!", current_state <> message}
+  def handle_call(message, current_state), do: {"Message Consumed!", current_state <> message}
 end
