@@ -15,11 +15,11 @@ defmodule ServerProcess do
     end)
   end
 
-  def read_state(server_pid) do
-    send(server_pid, {:state, self()})
+  def call(server_pid, message) do
+    send(server_pid, {message, self()})
 
     receive do
-      {:response, msg} -> msg
+      {:response, response} -> response
     after
       5000 -> {:error, "timeout"}
     end
@@ -29,33 +29,34 @@ defmodule ServerProcess do
 
   ### Server functions ###
   defp loop(callback_module, current_state) do
-    new_state =
-      receive do
-        {:message, caller_pid, message} ->
-          {response, new_state} = callback_module.handle_message(current_state, message)
-          send(caller_pid, {:response, response})
-          new_state
+    receive do
+      {message, caller_pid} ->
+        {response, new_state} = callback_module.handle_call(message, current_state)
+        send(caller_pid, {:response, response})
 
-        {:state, caller_pid} ->
-          send(caller_pid, {:response, current_state})
-          current_state
-      end
-
-    loop(callback_module, new_state)
+        loop(callback_module, new_state)
+    end
   end
 end
 
-defmodule MockCallbackModule do
+defmodule KeyValueStore do
   @moduledoc """
-  A mock callback module which must implement:
+  The KeyValueStore callback module. This will be running in the server process.
 
-  1. init/1: which provides the initial state of the server. 
-  2. handle_call/2: which handles the messages received by the server.
+  Recall the callback process must implement: init/0 and handle_call/2 - these  are both callback functions
+  used internally by the generic server process code. 
+
+  In contrast, we implement the interface functions: start/0, get/2 and put/3 so that the client never has
+  to know about the ServerProcess module.
   """
+  def start, do: ServerProcess.start(__MODULE__)
 
-  def start_link, do: ServerProcess.start(__MODULE__)
+  def init, do: %{}
 
-  def init, do: "initial state"
+  def put(server_pid, key, value), do: ServerProcess.call(server_pid, {:put, key, value})
 
-  def handle_message(current_state, message), do: {"message handled", current_state <> message}
+  def get(server_pid, key), do: ServerProcess.call(server_pid, {:get, key})
+
+  def handle_call({:put, key, value}, state), do: {:ok, Map.put(state, key, value)}
+  def handle_call({:get, key}, state), do: {Map.get(state, key), state}
 end
