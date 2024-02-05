@@ -22,8 +22,6 @@ defmodule ServerProcess do
     end
   end
 
-  def update_state(server_pid, message), do: send(server_pid, {:message, self(), message})
-
   ### Server functions ###
   defp loop(callback_module, current_state) do
     receive do
