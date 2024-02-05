@@ -1,10 +1,7 @@
 defmodule ServerProcess do
   @moduledoc """
   An implementation for a generic server process - designed for plugin to another
-  module (callback module). The callback module provides the specifics around:
-
-  1. initial state
-  2. handling messages recieved by the server.
+  module (callback module) 
   """
 
   ### Client functions ###
